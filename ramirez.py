@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.6
 from minion.minion import Minion
-from sys import stdin
 from threading import Thread
+import logging,os,errno,sys
 
 class StdInWriter(Thread):
     def __init__(self, minion):
@@ -12,8 +12,25 @@ class StdInWriter(Thread):
     def run(self):
         self.alive = True
         while self.alive:
-            line = stdin.readline()
+            line = sys.stdin.readline()
             self.minion.write(line)
+
+def drop_permissions():
+    logging.debug("Dropping permissions")
+    try:
+        import pwd
+    except ImportError:
+        logging.critical('Cannot import module "pwd"')
+        sys.exit(1)
+    nobody = pwd.getpwnam('nobody')[2]
+    try:
+        os.setuid(nobody)
+    except OSError, e:
+        if e.errno != errno.EPERM: raise
+        logging.warn('Cannot setuid "nobody"')
+        #sys.exit(1)
+
+drop_permissions()
 
 ramirez = Minion("ramirez")
 ramirez.start()
