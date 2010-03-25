@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 27
+/svn/!svn/ver/4/trunk/oyoyo
+END
+LICENSE
+K 25
+svn:wc:ra_dav:version-url
+V 35
+/svn/!svn/ver/1/trunk/oyoyo/LICENSE
+END
+setup.py
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/svn/!svn/ver/4/trunk/oyoyo/setup.py
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 34
+/svn/!svn/ver/1/trunk/oyoyo/README
+END
+setup.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/svn/!svn/ver/1/trunk/oyoyo/setup.cfg
+END
