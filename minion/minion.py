@@ -1,11 +1,13 @@
+from threading import Thread
+import string
+import logging
+
 from oyoyo.client import IRCClient, IRCApp
 from oyoyo.cmdhandler import DefaultCommandHandler
 from oyoyo import helpers
-from threading import Thread
 
-import string
+import require
 
-import logging
 class PrintHandler(logging.Handler):
     def emit(self, record):
         print record
@@ -44,15 +46,6 @@ class MyHandler(DefaultCommandHandler):
     
     def privmsg(self, src, room, msg):
         print "%s in %s said: %s" % (src, room, msg,)
-        
-        simplemsg = simplify(msg)
-        
-        if simplemsg == "%s GO AWAY" % self.minion.nick.upper():
-            helpers.quit(self.minion.client)
-            
-        if simplemsg == "%s WHO ARE YOU" % self.minion.nick.upper():
-            self.minion.write(self.minion.description)
-        
         self.callback(msg)
         
     def endofmotd(self, server, user, msg):
@@ -64,7 +57,8 @@ class Minion(Thread):
         self.nick = nick
         self.description = description
         self.room = room
-
+        self.matches = []
+        
         def connect_callback(cli):
             print "Connected."
             #helpers.join(cli, "#inforum")
@@ -79,6 +73,9 @@ class Minion(Thread):
         self.client.command_handler = MyHandler(self, self.msg_handler, self.room)
         self.app.addClient(self.client)
         
+        # Default minion commands 
+        self.register("GO AWAY", lambda: helpers.quit(self.client), require.name)
+        self.register("WHO ARE YOU", lambda: self.description, require.name)
     
     def run(self):
         thread = Thread()
@@ -94,4 +91,25 @@ class Minion(Thread):
     def msg_handler(self, msg):
         """Called when the bot recieves a message."""
         print "Minion recieved: %s" % msg
-
+        simplemsg = simplify(msg)
+        
+        # Check to see if any of the registered matches match this message.
+        for (match, callback, requires) in self.matches:
+            if simplemsg.find(match) > -1:
+                
+                # Test if all of the requires for the match succeed.
+                if min([require(self, simplemsg) for require in requires]):
+                    
+                    print "Calling callback for %s" % match
+                    # Call the callback, if it returns a string, send it to the client.
+                    result = callback()
+                    if isinstance(result, str):
+                        self.write(result)
+                    else:
+                        print "Callback didn't return a string."
+                    
+    def register(self, match, callback, requires):
+        """Registers a string to be matched against all received messages, with a callback to execute if the string matches, and a list of requirements that must be fulfilled before the callback is called."""
+        if not isinstance(requires, list):
+            requires = [requires]
+        self.matches += [(match, callback, requires)]
